@@ -99,6 +99,7 @@ export default {
 | `title` | String | `'Chat'` | The title displayed in the chat header |
 | `placeholder` | String | `'Ask a question...'` | Placeholder text for the input field |
 | `disabled` | Boolean | `false` | Whether the chat input is disabled |
+| `theme` | 'light' \| 'dark' | `'dark'` | Selects the light or dark theme |
 
 ## Events
 

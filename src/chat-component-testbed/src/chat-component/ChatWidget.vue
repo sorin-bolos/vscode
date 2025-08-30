@@ -1,5 +1,5 @@
 <template>
-  <div class="vscode-chat">
+  <div :class="['vscode-chat', `theme-${theme}`]">
     <div class="chat-header">
       <span class="title">{{ title }}</span>
       <div class="actions">
@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, nextTick, onMounted } from 'vue';
+import { defineComponent, ref, nextTick, onMounted, toRef } from 'vue';
 import '../../../../extensions/simple-browser/node_modules/@vscode/codicons/dist/codicon.css';
 
 export default defineComponent({
@@ -51,7 +51,12 @@ export default defineComponent({
   props: {
     title: { type: String, default: 'Chat' },
     placeholder: { type: String, default: 'Add Agent' },
-    disabled: { type: Boolean, default: false }
+    disabled: { type: Boolean, default: false },
+    theme: {
+      type: String,
+      default: 'dark',
+      validator: v => ['light', 'dark'].includes(v)
+    }
   },
   setup(props, { emit }) {
     const messages = ref([]);
@@ -59,6 +64,7 @@ export default defineComponent({
     const isLoading = ref(false);
     const messageId = ref(0);
     const messagesEl = ref(null);
+    const theme = toRef(props, 'theme');
 
     function scrollToBottom() {
       if (messagesEl.value) {
@@ -126,6 +132,7 @@ export default defineComponent({
       currentMessage,
       isLoading,
       messagesEl,
+      theme,
       placeholder: props.placeholder,
       sendMessage,
       addMessage,
@@ -240,6 +247,28 @@ export default defineComponent({
 .send-button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+.vscode-chat.theme-dark {
+  --vscode-foreground: #cccccc;
+  --vscode-chat-requestBackground: rgba(31,31,31,0.62);
+  --vscode-chat-requestBorder: rgba(255,255,255,0.1);
+  --vscode-chat-avatarBackground: #1f1f1f;
+  --vscode-chat-avatarForeground: #cccccc;
+  --vscode-chat-requestBubbleBackground: rgba(38,79,120,0.3);
+  --vscode-chat-requestCodeBorder: #004972b8;
+  --vscode-inlineChatInput-background: #313131;
+}
+
+.vscode-chat.theme-light {
+  --vscode-foreground: #616161;
+  --vscode-chat-requestBackground: rgba(255,255,255,0.62);
+  --vscode-chat-requestBorder: rgba(0,0,0,0.1);
+  --vscode-chat-avatarBackground: #f2f2f2;
+  --vscode-chat-avatarForeground: #616161;
+  --vscode-chat-requestBubbleBackground: rgba(173,214,255,0.3);
+  --vscode-chat-requestCodeBorder: #0e639c40;
+  --vscode-inlineChatInput-background: #ffffff;
 }
 </style>
 

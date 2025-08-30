@@ -13,9 +13,10 @@ export interface MessageSentEvent {
 }
 
 export interface ChatWidgetProps {
-	title?: string;
-	placeholder?: string;
-	disabled?: boolean;
+        title?: string;
+        placeholder?: string;
+        disabled?: boolean;
+        theme?: 'light' | 'dark';
 }
 
 export interface ChatWidgetMethods {
