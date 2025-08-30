@@ -19,9 +19,10 @@ export interface ChatWidgetProps {
 }
 
 export interface ChatWidgetMethods {
-	addMessage(message: Partial<Message>): void;
-	setLoading(loading: boolean): void;
-	clearChat(): void;
+        addMessage(message: Partial<Message>): void;
+        setLoading(loading: boolean): void;
+        clearChat(): void;
+        copyAll(): void;
 }
 
 export interface ChatWidgetEmits {
