@@ -44,7 +44,7 @@
 
 <script>
 import { defineComponent, ref, nextTick, onMounted } from 'vue';
-import '../../../vs/base/browser/ui/codicons/codicon/codicon.css';
+import '../../../../extensions/simple-browser/node_modules/@vscode/codicons/dist/codicon.css';
 
 export default defineComponent({
   name: 'ChatWidget',
@@ -233,6 +233,8 @@ export default defineComponent({
   color: var(--vscode-foreground, #cccccc);
   cursor: pointer;
   font-size: 16px;
+  width: 16px;
+  height: 16px;
 }
 
 .send-button:disabled {
