@@ -1,20 +1,31 @@
 <template>
   <div class="vscode-chat">
+    <div class="chat-header">
+      <span class="title">{{ title }}</span>
+      <div class="actions">
+        <button class="codicon codicon-plus" title="New Chat"></button>
+        <button class="codicon codicon-history" title="History"></button>
+        <button class="codicon codicon-settings-gear" title="Settings"></button>
+        <button class="codicon codicon-toolbar-more" title="More"></button>
+      </div>
+    </div>
     <div class="chat-messages" ref="messagesEl">
       <div
         v-for="msg in messages"
         :key="msg.id"
         :class="['chat-message', msg.type]"
       >
-        <div class="avatar">{{ msg.type === 'user' ? 'U' : 'A' }}</div>
-        <div class="content" v-html="msg.content"></div>
+        <div class="avatar">
+          <span :class="['codicon', msg.type === 'user' ? 'codicon-account' : 'codicon-tools']"></span>
+        </div>
+        <div class="bubble" v-html="msg.content"></div>
       </div>
       <div v-if="isLoading" class="chat-message assistant">
-        <div class="avatar">A</div>
-        <div class="content typing">...</div>
+        <div class="avatar"><span class="codicon codicon-tools"></span></div>
+        <div class="bubble typing">...</div>
       </div>
     </div>
-    <div class="chat-input-bar">
+    <div class="chat-input-container">
       <textarea
         v-model="currentMessage"
         class="chat-input"
@@ -22,16 +33,18 @@
         @keydown.enter.exact.prevent="sendMessage"
       ></textarea>
       <button
-        class="send-button"
+        class="send-button codicon codicon-send"
         :disabled="!currentMessage.trim() || disabled"
         @click="sendMessage"
-      >Send</button>
+        title="Send"
+      ></button>
     </div>
   </div>
 </template>
 
 <script>
 import { defineComponent, ref, nextTick, onMounted } from 'vue';
+import '../../../vs/base/browser/ui/codicons/codicon/codicon.css';
 
 export default defineComponent({
   name: 'ChatWidget',
@@ -129,16 +142,33 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #1e1e1e;
-  color: #cccccc;
-  font-family: var(--vscode-font-family, sans-serif);
+  background: var(--vscode-chat-requestBackground, #1f1f1f);
+  color: var(--vscode-foreground, #cccccc);
+  font-family: var(--vscode-font-family, 'Segoe WPC', 'Segoe UI', sans-serif);
+  font-size: 13px;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--vscode-chat-requestBorder, #3c3c3c);
+}
+
+.chat-header .actions button {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 4px;
 }
 
 .chat-messages {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
-  user-select: text;
 }
 
 .chat-message {
@@ -149,60 +179,65 @@ export default defineComponent({
 .chat-message .avatar {
   width: 24px;
   height: 24px;
-  border-radius: 50%;
-  background: #3c3c3c;
-  color: #cccccc;
+  margin-right: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 8px;
-  font-size: 12px;
+  border-radius: 3px;
+  background: var(--vscode-chat-avatarBackground, #1f1f1f);
+  color: var(--vscode-chat-avatarForeground, #cccccc);
   flex-shrink: 0;
 }
 
-.chat-message.user .avatar {
-  background: #0e639c;
+.chat-message .bubble {
+  background: var(--vscode-chat-requestBubbleBackground, rgba(38,79,120,0.3));
+  border: 1px solid var(--vscode-chat-requestCodeBorder, rgba(0,73,114,0.72));
+  padding: 6px 8px;
+  border-radius: 4px;
+  max-width: 100%;
+  white-space: pre-wrap;
 }
 
-.chat-message .content {
-  white-space: pre-wrap;
+.chat-message.assistant .bubble {
+  background: transparent;
+  border: none;
 }
 
 .typing {
   opacity: 0.6;
 }
 
-.chat-input-bar {
-  display: flex;
-  flex-direction: column;
+.chat-input-container {
+  position: relative;
+  border-top: 1px solid var(--vscode-chat-requestBorder, #3c3c3c);
   padding: 8px;
-  border-top: 1px solid #3c3c3c;
 }
 
 .chat-input {
   width: 100%;
   min-height: 60px;
   resize: none;
-  border: 1px solid #3c3c3c;
-  padding: 8px;
-  background: #ffffff;
-  color: #1e1e1e;
+  padding: 8px 32px 8px 8px;
+  background: var(--vscode-inlineChatInput-background, #313131);
+  color: var(--vscode-foreground, #cccccc);
+  border: 1px solid var(--vscode-chat-requestBorder, #3c3c3c);
   font-family: inherit;
 }
 
 .send-button {
-  align-self: flex-end;
-  margin-top: 8px;
-  background: #0e639c;
-  color: #ffffff;
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  background: transparent;
   border: none;
-  padding: 6px 12px;
+  color: var(--vscode-foreground, #cccccc);
   cursor: pointer;
+  font-size: 16px;
 }
 
 .send-button:disabled {
   opacity: 0.4;
-  cursor: not-allowed;
+  cursor: default;
 }
 </style>
 
