@@ -1,0 +1,33 @@
+{
+  "name": "@vscode/chat-widget",
+  "version": "1.0.0",
+  "description": "VS Code Chat Widget Vue Component",
+  "main": "index.js",
+  "module": "index.js",
+  "files": [
+    "ChatWidget.vue",
+    "index.js",
+    "README.md"
+  ],
+  "keywords": [
+    "vue",
+    "component",
+    "chat",
+    "widget",
+    "vscode"
+  ],
+  "author": "VS Code Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "vue": "^2.6.0 || ^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/vscode.git",
+    "directory": "src/chat-component"
+  },
+  "bugs": {
+    "url": "https://github.com/microsoft/vscode/issues"
+  },
+  "homepage": "https://github.com/microsoft/vscode/tree/main/src/chat-component"
+}
