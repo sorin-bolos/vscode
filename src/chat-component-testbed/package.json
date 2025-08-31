@@ -14,7 +14,8 @@
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
-    "vue": "^3.5.18"
+    "vue": "^3.5.18",
+    "@vscode/codicons": "^0.0.35"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",

@@ -44,7 +44,7 @@
 
 <script>
 import { defineComponent, ref, nextTick, onMounted, toRef } from 'vue';
-import '../../../../extensions/simple-browser/node_modules/@vscode/codicons/dist/codicon.css';
+import '@vscode/codicons/dist/codicon.css';
 
 export default defineComponent({
   name: 'ChatWidget',
@@ -218,17 +218,24 @@ export default defineComponent({
   position: relative;
   border-top: 1px solid var(--vscode-chat-requestBorder, #3c3c3c);
   padding: 8px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  max-height: 150px;
 }
 
 .chat-input {
   width: 100%;
   min-height: 60px;
+  height: auto;
   resize: none;
   padding: 8px 32px 8px 8px;
   background: var(--vscode-inlineChatInput-background, #313131);
   color: var(--vscode-foreground, #cccccc);
   border: 1px solid var(--vscode-chat-requestBorder, #3c3c3c);
   font-family: inherit;
+  box-sizing: border-box;
+  overflow: hidden;
+  field-sizing: content;
 }
 
 .send-button {
