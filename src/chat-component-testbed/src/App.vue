@@ -9,6 +9,7 @@
       <ChatWidget
         ref="chatWidget"
         title="AI Assistant"
+        theme="light"
         placeholder="Ask me anything..."
         @message-sent="handleMessageSent"
         @message-received="handleMessageReceived"

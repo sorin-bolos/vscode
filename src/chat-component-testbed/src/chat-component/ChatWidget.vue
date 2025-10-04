@@ -1,403 +1,281 @@
 <template>
-  <div class="chat-widget" :class="{ 'chat-widget-focused': isFocused }">
+  <div :class="['vscode-chat', `theme-${theme}`]">
     <div class="chat-header">
-      <h3 class="chat-title">{{ title }}</h3>
-      <button @click="clearChat" class="clear-button" title="Clear chat">
-        <span>🗑️</span>
-      </button>
+      <span class="title">{{ title }}</span>
+      <div class="actions">
+        <button class="codicon codicon-plus" title="New Chat"></button>
+        <button class="codicon codicon-history" title="History"></button>
+        <button class="codicon codicon-settings-gear" title="Settings"></button>
+        <button class="codicon codicon-toolbar-more" title="More"></button>
+      </div>
     </div>
-
-    <div class="chat-messages" ref="messagesContainer">
+    <div class="chat-messages" ref="messagesEl">
       <div
-        v-for="message in messages"
-        :key="message.id"
-        :class="['message', `message-${message.type}`]"
+        v-for="msg in messages"
+        :key="msg.id"
+        :class="['chat-message', msg.type]"
       >
-        <div class="message-content">
-          <div class="message-text" v-html="message.content"></div>
-          <div class="message-timestamp">{{ formatTime(message.timestamp) }}</div>
+        <div class="avatar">
+          <span :class="['codicon', msg.type === 'user' ? 'codicon-account' : 'codicon-tools']"></span>
         </div>
+        <div class="bubble" v-html="msg.content"></div>
       </div>
-
-      <div v-if="isLoading" class="message message-assistant loading">
-        <div class="message-content">
-          <div class="typing-indicator">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </div>
+      <div v-if="isLoading" class="chat-message assistant">
+        <div class="avatar"><span class="codicon codicon-tools"></span></div>
+        <div class="bubble typing">...</div>
       </div>
     </div>
-
     <div class="chat-input-container">
-      <div class="chat-input-wrapper">
-        <textarea
-          v-model="currentMessage"
-          @keydown="handleKeyDown"
-          @focus="isFocused = true"
-          @blur="isFocused = false"
-          placeholder="Ask a question..."
-          class="chat-input"
-          rows="1"
-          ref="inputElement"
-        ></textarea>
-        <button
-          @click="sendMessage"
-          :disabled="!currentMessage.trim() || isLoading"
-          class="send-button"
-          title="Send message"
-        >
-          <span>→</span>
-        </button>
-      </div>
+      <textarea
+        v-model="currentMessage"
+        class="chat-input"
+        :placeholder="placeholder"
+        @keydown.enter.exact.prevent="sendMessage"
+      ></textarea>
+      <button
+        class="send-button codicon codicon-send"
+        :disabled="!currentMessage.trim() || disabled"
+        @click="sendMessage"
+        title="Send"
+      ></button>
     </div>
   </div>
 </template>
 
 <script>
-export default {
+import { defineComponent, ref, nextTick, onMounted, toRef } from 'vue';
+import '@vscode/codicons/dist/codicon.css';
+
+export default defineComponent({
   name: 'ChatWidget',
   props: {
-    title: {
+    title: { type: String, default: 'Chat' },
+    placeholder: { type: String, default: 'Add Agent' },
+    disabled: { type: Boolean, default: false },
+    theme: {
       type: String,
-      default: 'Chat'
-    },
-    placeholder: {
-      type: String,
-      default: 'Ask a question...'
-    },
-    disabled: {
-      type: Boolean,
-      default: false
+      default: 'dark',
+      validator: v => ['light', 'dark'].includes(v)
     }
   },
-  data() {
-    return {
-      messages: [],
-      currentMessage: '',
-      isLoading: false,
-      isFocused: false,
-      messageId: 0
-    }
-  },
-  methods: {
-    sendMessage() {
-      if (!this.currentMessage.trim() || this.isLoading) {
-        return;
-      }
+  setup(props, { emit }) {
+    const messages = ref([]);
+    const currentMessage = ref('');
+    const isLoading = ref(false);
+    const messageId = ref(0);
+    const messagesEl = ref(null);
+    const theme = toRef(props, 'theme');
 
-      const userMessage = {
-        id: this.messageId++,
-        type: 'user',
-        content: this.currentMessage,
+    function scrollToBottom() {
+      if (messagesEl.value) {
+        messagesEl.value.scrollTop = messagesEl.value.scrollHeight;
+      }
+    }
+
+    function addMessage(message) {
+      const msg = {
+        id: messageId.value++,
+        type: message.type || 'assistant',
+        content: message.content || '',
         timestamp: new Date()
       };
-
-      this.messages.push(userMessage);
-      const messageContent = this.currentMessage;
-      this.currentMessage = '';
-      this.isLoading = true;
-
-      // Emit event for parent component to handle
-      this.$emit('message-sent', {
-        message: messageContent,
-        messageObject: userMessage
-      });
-
-      // Auto-resize textarea
-      this.$nextTick(() => {
-        this.adjustTextareaHeight();
-      });
-
-      // Simulate response (replace with actual chat integration)
-      this.simulateResponse();
-    },
-
-    simulateResponse() {
-      setTimeout(() => {
-        const assistantMessage = {
-          id: this.messageId++,
-          type: 'assistant',
-          content: 'This is a placeholder response. Replace with actual chat integration.',
-          timestamp: new Date()
-        };
-
-        this.messages.push(assistantMessage);
-        this.isLoading = false;
-        this.$emit('message-received', assistantMessage);
-
-        this.$nextTick(() => {
-          this.scrollToBottom();
-        });
-      }, 1500);
-    },
-
-    clearChat() {
-      this.messages = [];
-      this.$emit('chat-cleared');
-    },
-
-    handleKeyDown(event) {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        this.sendMessage();
-      }
-    },
-
-    adjustTextareaHeight() {
-      const textarea = this.$refs.inputElement;
-      if (textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-      }
-    },
-
-    scrollToBottom() {
-      const container = this.$refs.messagesContainer;
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
-    },
-
-    formatTime(timestamp) {
-      return timestamp.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    },
-
-    addMessage(message) {
-      this.messages.push({
-        id: this.messageId++,
-        ...message,
-        timestamp: message.timestamp || new Date()
-      });
-
-      this.$nextTick(() => {
-        this.scrollToBottom();
-      });
-    },
-
-    setLoading(loading) {
-      this.isLoading = loading;
+      messages.value.push(msg);
+      emit('message-received', msg);
+      nextTick(scrollToBottom);
     }
-  },
-  watch: {
-    currentMessage() {
-      this.$nextTick(() => {
-        this.adjustTextareaHeight();
-      });
+
+    function setLoading(v) {
+      isLoading.value = v;
+      nextTick(scrollToBottom);
     }
-  },
-  mounted() {
-    this.adjustTextareaHeight();
+
+    function clearChat() {
+      messages.value = [];
+      emit('chat-cleared');
+    }
+
+    function stripHtml(html) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      return tmp.textContent || '';
+    }
+
+    function copyAll() {
+      const text = messages.value
+        .map(m => `${m.type === 'user' ? 'You' : 'Assistant'}: ${stripHtml(m.content)}`)
+        .join('\n\n');
+      navigator.clipboard.writeText(text);
+    }
+
+    function sendMessage() {
+      if (!currentMessage.value.trim() || props.disabled) return;
+      const userMsg = {
+        id: messageId.value++,
+        type: 'user',
+        content: currentMessage.value,
+        timestamp: new Date()
+      };
+      messages.value.push(userMsg);
+      emit('message-sent', { message: currentMessage.value, messageObject: userMsg });
+      currentMessage.value = '';
+      nextTick(scrollToBottom);
+    }
+
+    onMounted(() => {
+      // make copy function available globally for testing/demo purposes
+      window.copyChatContent = copyAll;
+    });
+
+    // expose methods for parent via template ref
+    return {
+      messages,
+      currentMessage,
+      isLoading,
+      messagesEl,
+      theme,
+      placeholder: props.placeholder,
+      sendMessage,
+      addMessage,
+      setLoading,
+      clearChat,
+      copyAll
+    };
   }
-}
+});
 </script>
 
 <style scoped>
-.chat-widget {
+.vscode-chat {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #fff;
-  border: 1px solid #e1e4e8;
-  border-radius: 8px;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-.chat-widget-focused {
-  border-color: #0078d4;
-  box-shadow: 0 0 0 1px #0078d4;
+  background: var(--vscode-chat-requestBackground, #1f1f1f);
+  color: var(--vscode-foreground, #cccccc);
+  font-family: var(--vscode-font-family, 'Segoe WPC', 'Segoe UI', sans-serif);
+  font-size: 13px;
 }
 
 .chat-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: #f6f8fa;
-  border-bottom: 1px solid #e1e4e8;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--vscode-chat-requestBorder, #3c3c3c);
 }
 
-.chat-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #24292f;
-}
-
-.clear-button {
-  background: none;
+.chat-header .actions button {
+  background: transparent;
   border: none;
+  color: inherit;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  color: #656d76;
   font-size: 16px;
-}
-
-.clear-button:hover {
-  background: #f3f4f6;
-  color: #24292f;
+  margin-left: 4px;
 }
 
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.message {
-  display: flex;
-  max-width: 80%;
-}
-
-.message-user {
-  align-self: flex-end;
-}
-
-.message-assistant {
-  align-self: flex-start;
-}
-
-.message-content {
-  padding: 8px 12px;
-  border-radius: 12px;
-  position: relative;
-}
-
-.message-user .message-content {
-  background: #0078d4;
-  color: white;
-}
-
-.message-assistant .message-content {
-  background: #f6f8fa;
-  color: #24292f;
-  border: 1px solid #e1e4e8;
-}
-
-.message-text {
-  font-size: 14px;
-  line-height: 1.4;
-  margin-bottom: 4px;
-}
-
-.message-timestamp {
-  font-size: 11px;
-  opacity: 0.7;
-}
-
-.loading .message-content {
-  padding: 12px;
-}
-
-.typing-indicator {
-  display: flex;
-  gap: 4px;
-}
-
-.typing-indicator span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #656d76;
-  animation: typing 1.4s infinite ease-in-out;
-}
-
-.typing-indicator span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.typing-indicator span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-@keyframes typing {
-  0%, 80%, 100% {
-    transform: scale(0);
-    opacity: 0.5;
-  }
-  40% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.chat-input-container {
-  padding: 16px;
-  border-top: 1px solid #e1e4e8;
-  background: #fff;
-}
-
-.chat-input-wrapper {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  background: #f6f8fa;
-  border: 1px solid #e1e4e8;
-  border-radius: 8px;
   padding: 8px;
 }
 
-.chat-input {
-  flex: 1;
-  border: none;
-  background: none;
-  resize: none;
-  outline: none;
-  font-size: 14px;
-  line-height: 1.4;
-  font-family: inherit;
-  min-height: 20px;
-  max-height: 120px;
+.chat-message {
+  display: flex;
+  margin-bottom: 12px;
 }
 
-.chat-input::placeholder {
-  color: #656d76;
+.chat-message .avatar {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  background: var(--vscode-chat-avatarBackground, #1f1f1f);
+  color: var(--vscode-chat-avatarForeground, #cccccc);
+  flex-shrink: 0;
+}
+
+.chat-message .bubble {
+  background: var(--vscode-chat-requestBubbleBackground, rgba(38,79,120,0.3));
+  border: 1px solid var(--vscode-chat-requestCodeBorder, rgba(0,73,114,0.72));
+  padding: 6px 8px;
+  border-radius: 4px;
+  max-width: 100%;
+  white-space: pre-wrap;
+}
+
+.chat-message.assistant .bubble {
+  background: transparent;
+  border: none;
+}
+
+.typing {
+  opacity: 0.6;
+}
+
+.chat-input-container {
+  position: relative;
+  border-top: 1px solid var(--vscode-chat-requestBorder, #3c3c3c);
+  padding: 8px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  max-height: 150px;
+}
+
+.chat-input {
+  width: 100%;
+  min-height: 60px;
+  height: auto;
+  resize: none;
+  padding: 8px 32px 8px 8px;
+  background: var(--vscode-inlineChatInput-background, #313131);
+  color: var(--vscode-foreground, #cccccc);
+  border: 1px solid var(--vscode-chat-requestBorder, #3c3c3c);
+  font-family: inherit;
+  box-sizing: border-box;
+  overflow: hidden;
+  field-sizing: content;
 }
 
 .send-button {
-  background: #0078d4;
-  color: white;
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  background: transparent;
   border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
+  color: var(--vscode-foreground, #cccccc);
   cursor: pointer;
   font-size: 16px;
-  transition: background-color 0.2s;
-}
-
-.send-button:hover:not(:disabled) {
-  background: #106ebe;
+  width: 16px;
+  height: 16px;
 }
 
 .send-button:disabled {
-  background: #d1d9e0;
-  cursor: not-allowed;
+  opacity: 0.4;
+  cursor: default;
 }
 
-/* Scrollbar styling */
-.chat-messages::-webkit-scrollbar {
-  width: 6px;
+.vscode-chat.theme-dark {
+  --vscode-foreground: #cccccc;
+  --vscode-chat-requestBackground: rgba(31,31,31,0.62);
+  --vscode-chat-requestBorder: rgba(255,255,255,0.1);
+  --vscode-chat-avatarBackground: #1f1f1f;
+  --vscode-chat-avatarForeground: #cccccc;
+  --vscode-chat-requestBubbleBackground: rgba(38,79,120,0.3);
+  --vscode-chat-requestCodeBorder: #004972b8;
+  --vscode-inlineChatInput-background: #313131;
 }
 
-.chat-messages::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.chat-messages::-webkit-scrollbar-thumb {
-  background: #d1d9e0;
-  border-radius: 3px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb:hover {
-  background: #a8b3c1;
+.vscode-chat.theme-light {
+  --vscode-foreground: #616161;
+  --vscode-chat-requestBackground: rgba(255,255,255,0.62);
+  --vscode-chat-requestBorder: rgba(0,0,0,0.1);
+  --vscode-chat-avatarBackground: #f2f2f2;
+  --vscode-chat-avatarForeground: #616161;
+  --vscode-chat-requestBubbleBackground: rgba(173,214,255,0.3);
+  --vscode-chat-requestCodeBorder: #0e639c40;
+  --vscode-inlineChatInput-background: #ffffff;
 }
 </style>
+
